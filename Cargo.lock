@@ -19,3 +19,10 @@ version = "0.1.0"
 dependencies = [
  "advent_2020_common",
 ]
+
+[[package]]
+name = "advent_2020_week_3"
+version = "0.1.0"
+dependencies = [
+ "advent_2020_common",
+]
