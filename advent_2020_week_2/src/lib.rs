@@ -1,13 +1,26 @@
 use advent_2020_common::Error;
 
-fn first(input: &[String]) -> u32 {
-    0
+pub fn first(input: &[String]) -> Result<u32, Error> {
+    let mut count = 0; 
+
+    for input in input {
+        let rule = PasswordRule::from_string(input)?;
+        let found_letters: usize = rule.password_to_test.chars()
+            .filter(|c| *c == rule.letter)
+            .count();
+        
+        if rule.first_num <= found_letters && found_letters <= rule.second_num {
+            count = count + 1;
+        }
+    }
+
+    Ok(count)
 }
 
 #[derive(PartialEq, Debug)]
 pub struct PasswordRule {
-    first_num: u32,
-    second_num: u32,
+    first_num: usize,
+    second_num: usize,
     letter: char,
     password_to_test: String
 }
@@ -74,8 +87,11 @@ mod tests {
     }
 
     #[test]
-    fn first() {
-        assert_eq!(1, 1);
+    fn test_first() {
+        let input = example(); 
+        let result = first(&input).unwrap();
+        let expected = 2;
+        assert_eq!(result, expected);
     }
 
     #[test]
