@@ -17,6 +17,24 @@ pub fn first(input: &[String]) -> Result<u32, Error> {
     Ok(count)
 }
 
+pub fn second(input: &[String]) -> Result<u32, Error> {
+    let mut count = 0; 
+
+    for input in input {
+        let rule = PasswordRule::from_string(input)?;
+        let mut iter = input.chars();
+        let found_first = iter.nth(rule.first_num - 1).filter(|c| *c == rule.letter);
+        // second - first because the first call to `nth` consumed
+        let found_second = iter.nth(rule.second_num - rule.first_num - 1).filter(|c| *c == rule.letter);
+
+        if found_first.or(found_second).is_some() {
+            count = count + 1;
+        }
+    }
+
+    Ok(count)
+}
+
 #[derive(PartialEq, Debug)]
 pub struct PasswordRule {
     first_num: usize,
@@ -91,6 +109,14 @@ mod tests {
         let input = example(); 
         let result = first(&input).unwrap();
         let expected = 2;
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_second() { 
+        let input = example(); 
+        let result = second(&input).unwrap();
+        let expected = 1;
         assert_eq!(result, expected);
     }
 
