@@ -19,6 +19,22 @@ pub fn input() -> Result<Vec<String>, std::io::Error> {
     Ok(contents)
 }
 
+/// Convert an iterable of strings into u32s
+/// Examples:
+/// ```
+/// let inputs: Vec<String> = vec!(String::from("20"), String::from("50"));
+/// let nums = advent_2020_common::input_to_nums(&inputs);
+/// assert_eq!(nums, vec!(20, 50))
+/// ```
+/// 
+pub fn input_to_nums(input: &[String]) -> Vec<u32> {
+    input
+        .iter()
+        .map(|s| { s.parse()} )
+        .flatten()
+        .collect()
+}
+
 #[derive(Debug)]
 pub struct Error(String);
 

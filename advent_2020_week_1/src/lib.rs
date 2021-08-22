@@ -1,5 +1,6 @@
 const SUM_LOOKED_FOR: u32 = 2020;
 use std::collections::HashSet;
+use advent_2020_common::input_to_nums;
 
 pub fn first(input: &[String]) -> u32 {
     let input = input_to_nums(input);
@@ -37,14 +38,6 @@ pub fn second(input: &[String]) -> u32 {
     }
     
     panic!("Solution not found!")
-}
-
-fn input_to_nums(input: &[String]) -> Vec<u32> {
-    input
-        .iter()
-        .map(|s| { s.parse()} )
-        .flatten()
-        .collect()
 }
 
 #[cfg(test)]
