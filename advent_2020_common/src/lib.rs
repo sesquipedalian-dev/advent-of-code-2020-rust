@@ -3,12 +3,6 @@ use std::io::prelude::*;
 
 /// Read the puzzle input file; filename defaults to 'input.txt' 
 /// unless specified in the first command line argument
-/// Examples:
-/// ```
-/// use advent_2020_common;
-/// let input = input().unwrap();
-/// println!(Using puzzle input! {:?}", input");
-/// ```
 /// 
 pub fn input() -> Result<Vec<String>, std::io::Error> {
     let mut args = std::env::args();
