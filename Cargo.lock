@@ -7,21 +7,21 @@ name = "advent_2020_common"
 version = "0.1.0"
 
 [[package]]
-name = "advent_2020_week_1"
+name = "advent_2020_day_1"
 version = "0.1.0"
 dependencies = [
  "advent_2020_common",
 ]
 
 [[package]]
-name = "advent_2020_week_2"
+name = "advent_2020_day_2"
 version = "0.1.0"
 dependencies = [
  "advent_2020_common",
 ]
 
 [[package]]
-name = "advent_2020_week_3"
+name = "advent_2020_day_3"
 version = "0.1.0"
 dependencies = [
  "advent_2020_common",

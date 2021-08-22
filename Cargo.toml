@@ -1,7 +1,7 @@
 [workspace]
 
 members = [
-    "advent_2020_week_1",
-    "advent_2020_week_2",
-    "advent_2020_week_3",
+    "advent_2020_day_1",
+    "advent_2020_day_2",
+    "advent_2020_day_3",
 ]
