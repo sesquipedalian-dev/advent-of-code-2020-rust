@@ -22,12 +22,13 @@ pub fn second(input: &[String]) -> Result<u32, Error> {
 
     for input in input {
         let rule = PasswordRule::from_string(input)?;
-        let mut iter = input.chars();
-        let found_first = iter.nth(rule.first_num - 1).filter(|c| *c == rule.letter);
+        let mut iter = rule.password_to_test.chars();
+        let is_rule_letter = |c: &char| *c == rule.letter;
+        let found_first = iter.nth(rule.first_num - 1).filter(is_rule_letter);
         // second - first because the first call to `nth` consumed
-        let found_second = iter.nth(rule.second_num - rule.first_num - 1).filter(|c| *c == rule.letter);
+        let found_second = iter.nth(rule.second_num - rule.first_num - 1).filter(is_rule_letter);
 
-        if found_first.or(found_second).is_some() {
+        if found_first.xor(found_second).is_some() {
             count = count + 1;
         }
     }
