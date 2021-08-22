@@ -1,5 +1,5 @@
 [workspace]
 
 members = [
-
+    "advent_2020_week_1",
 ]
