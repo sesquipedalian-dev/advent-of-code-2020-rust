@@ -2,4 +2,5 @@
 
 members = [
     "advent_2020_week_1",
+    "advent_2020_week_2",
 ]
