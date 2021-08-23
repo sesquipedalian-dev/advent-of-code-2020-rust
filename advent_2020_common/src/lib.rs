@@ -42,4 +42,7 @@ impl Error {
     pub fn new<T>(message: &str) -> std::result::Result<T, Error> {
         Err(Error(String::from(message)))
     }
+    pub fn from_string<T>(message: String) -> std::result::Result<T, Error> {
+        Err(Error(message))
+    }
 }
