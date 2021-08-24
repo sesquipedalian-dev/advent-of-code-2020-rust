@@ -6,4 +6,5 @@ members = [
     "advent_2020_day_3",
     "advent_2020_day_4",
     "advent_2020_day_5",
+    "advent_2020_day_6",
 ]
