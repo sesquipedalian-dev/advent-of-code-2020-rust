@@ -1,6 +1,5 @@
 use std::collections::{HashSet, HashMap, VecDeque};
 use advent_2020_common::Error;
-#[macro_use]
 extern crate lazy_static;
 
 use lazy_static::lazy_static;
@@ -32,7 +31,7 @@ pub struct DirectedBagsGraph{
 }
 
 impl DirectedBagsGraph {
-    pub fn new(input: &[String]) -> Result<DirectedBagsGraph, Error> {
+    pub fn new(input: &[String], invert: bool) -> Result<DirectedBagsGraph, Error> {
         let mut edges = Edges::new();
         let mut vertices = Vertices::new();
         // let mut new_self = DirectedBagsGraph{edges, vertices};
@@ -78,7 +77,11 @@ impl DirectedBagsGraph {
                             .map(|s| s.as_str().trim()).unwrap_or("")
                             .parse()
                             .or(Error::new("couldn't parse count"))?;
-                        insert_edge(from_index, Edge{to: to_index, count});
+                        if invert {
+                            insert_edge(to_index, Edge{to: from_index, count});
+                        } else {
+                            insert_edge(from_index, Edge{to: to_index, count});
+                        }
                     }
                 }
             }
@@ -96,28 +99,37 @@ impl DirectedBagsGraph {
     }
 }
 
-pub fn first(graph: &DirectedBagsGraph, target_bag: &String) -> Result<usize, Error> {
-    let start_vertex_id = graph.vertex_id_named(target_bag).unwrap();
+struct DfsStep{vertex_id: usize, multiplier: usize}
+
+fn depth_first_search(graph: &DirectedBagsGraph, starting_bag: &String) -> Result<(usize, usize), Error> {
+    let start_vertex_id = graph.vertex_id_named(starting_bag).unwrap();
     let mut queue = VecDeque::new();
-    queue.push_back(start_vertex_id);
+    queue.push_back(DfsStep{vertex_id: start_vertex_id, multiplier: 1});
     let mut seen: HashSet<usize> = HashSet::new();
+    let mut count: usize = 0;
 
     while queue.len() > 0 {
-        let next: usize = queue.pop_front().unwrap();
-        
-        if seen.get(&next).is_some() {
-            continue;
-        }
-        seen.insert(next);
+        let DfsStep{vertex_id, multiplier} = queue.pop_front().unwrap();
+        seen.insert(vertex_id);
 
-        if let Some(edges) = graph.edges_for_vertex_id(next) {
+        if let Some(edges) = graph.edges_for_vertex_id(vertex_id) {
             for edge in edges.iter() {
-                queue.push_front(edge.to);
+                let next_mul = edge.count * multiplier;
+                count += next_mul;
+                queue.push_front(DfsStep{vertex_id: edge.to, multiplier: next_mul});
             }
         }
     }
 
-    Ok(seen.len() - 1) // -1 for the original item
+    Ok((seen.len() - 1, count)) // -1 for the original item
+}
+
+pub fn first(graph: &DirectedBagsGraph, target_bag: &String) -> Result<usize, Error> {
+    depth_first_search(graph, target_bag).map(|r| r.0)
+}
+
+pub fn second(graph: &DirectedBagsGraph, target_bag: &String) -> Result<usize, Error> {
+    depth_first_search(graph, target_bag).map(|r| r.1)
 }
 
 #[cfg(test)]
@@ -138,12 +150,40 @@ mod tests {
         )
     }
 
+    fn example_2() -> Vec<String> {
+        vec!(
+            String::from("shiny gold bags contain 2 dark red bags."),
+            String::from("dark red bags contain 2 dark orange bags."),
+            String::from("dark orange bags contain 2 dark yellow bags."),
+            String::from("dark yellow bags contain 2 dark green bags."),
+            String::from("dark green bags contain 2 dark blue bags."),
+            String::from("dark blue bags contain 2 dark violet bags."),
+            String::from("dark violet bags contain no other bags."),
+        )
+    }
+
     #[test]
     fn test_first() {
-        let input = DirectedBagsGraph::new(&example()).unwrap();
+        let input = DirectedBagsGraph::new(&example(), false).unwrap();
         let result = first(&input, &String::from("shiny gold")).unwrap();
 
         assert_eq!(result, 4);
+    }
+
+    #[test]
+    fn test_second() {
+        let input = DirectedBagsGraph::new(&example(), true).unwrap();
+        let result = second(&input, &String::from("shiny gold")).unwrap();
+
+        assert_eq!(result, 32);
+    }
+
+    #[test]
+    fn test_second_again() {
+        let input = DirectedBagsGraph::new(&example_2(), true).unwrap();
+        let result = second(&input, &String::from("shiny gold")).unwrap();
+
+        assert_eq!(result, 126);
     }
 
     #[test]
@@ -176,7 +216,7 @@ mod tests {
     }
     #[test]
     fn test_parse_graph() {
-        let result = DirectedBagsGraph::new(&example()).unwrap();
+        let result = DirectedBagsGraph::new(&example(), false).unwrap();
 
         let my_i = result.vertex_id_named("muted yellow").unwrap();
 
@@ -184,15 +224,35 @@ mod tests {
 
         let contains_us = result.edges.get(&my_i).unwrap();
 
-        let light_red_edge = contains_us.iter().filter(|&Edge{to, count}| {
+        let light_red_edge = contains_us.iter().filter(|&Edge{to, count: _}| {
             *to == lr_i
         }).next().unwrap().count;
         assert_eq!(light_red_edge, 2);
 
         let do_i = result.vertex_id_named("dark orange").unwrap();
-        let dark_orange_edge = contains_us.iter().filter(|&Edge{to, count}| {
+        let dark_orange_edge = contains_us.iter().filter(|&Edge{to, count: _}| {
             *to == do_i
         }).next().unwrap().count;
         assert_eq!(dark_orange_edge, 4);
+    }
+
+    #[test]
+    fn test_parse_graph_inverted() {
+        let result = DirectedBagsGraph::new(&example(), true).unwrap();
+
+        let sg_i = result.vertex_id_named("shiny gold").unwrap();
+        let do_i = result.vertex_id_named("dark olive").unwrap();
+        let vp_i = result.vertex_id_named("vibrant plum").unwrap();
+
+        let contains = result.edges.get(&sg_i).unwrap();
+        let dark_olive_edge = contains.iter().filter(|&Edge{to, count: _}| {
+            *to == do_i
+        }).next().unwrap().count;
+        assert_eq!(dark_olive_edge, 1);
+
+        let vibrant_plum_edge = contains.iter().filter(|&Edge{to, count: _}| {
+            *to == vp_i
+        }).next().unwrap().count;
+        assert_eq!(vibrant_plum_edge, 2);
     }
 }
