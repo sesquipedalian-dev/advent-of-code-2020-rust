@@ -60,6 +60,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "advent_2020_day_8"
+version = "0.1.0"
+dependencies = [
+ "advent_2020_common",
+ "lazy_static",
+ "regex",
+]
+
+[[package]]
 name = "aho-corasick"
 version = "0.7.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"

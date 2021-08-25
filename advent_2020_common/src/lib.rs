@@ -36,13 +36,13 @@ pub fn input_to_nums(input: &[String]) -> Vec<u32> {
 }
 
 #[derive(Debug)]
-pub struct Error(String);
+pub struct Error{pub msg: String}
 
 impl Error {
     pub fn new<T>(message: &str) -> std::result::Result<T, Error> {
-        Err(Error(String::from(message)))
+        Err(Error{msg: String::from(message)})
     }
     pub fn from_string<T>(message: String) -> std::result::Result<T, Error> {
-        Err(Error(message))
+        Err(Error{msg:message})
     }
 }
