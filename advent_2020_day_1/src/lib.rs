@@ -1,29 +1,12 @@
 const SUM_LOOKED_FOR: u32 = 2020;
-use std::collections::HashSet;
-use advent_2020_common::input_to_nums;
+use advent_2020_common::{find_complements, input_to_nums};
 
 pub fn first(input: &[String]) -> u32 {
     let input = input_to_nums(input);
-    find_complements(input, SUM_LOOKED_FOR).unwrap()
+    find_complements(input.as_slice(), SUM_LOOKED_FOR, true).unwrap()
 }
 
-fn find_complements(input: Vec<u32>, sum_looked_for: u32) -> Option<u32> {
-    let mut seen_complements: HashSet<u32> = HashSet::new();  
-    for current in input.iter() {
-        if sum_looked_for < *current {
-            continue;
-        }
 
-        let my_complement = sum_looked_for - current;
-
-        if seen_complements.contains(&current) {
-            return Some(current * my_complement);
-        }
-
-        seen_complements.insert(my_complement);
-    }
-    None
-}
 
 pub fn second(input: &[String]) -> u32 {
     let input = input_to_nums(input);
@@ -31,8 +14,8 @@ pub fn second(input: &[String]) -> u32 {
 
     for i in 0 .. input_len {
         let complement = SUM_LOOKED_FOR - input[i];
-        let rest = [&input[..i], &input[(i+1)..]].concat();
-        if let Some(partial_product) = find_complements(rest, complement) {
+        let rest: &[u32] = &[&input[..i], &input[(i+1)..]].concat();
+        if let Some(partial_product) = find_complements(rest, complement, true) {
             return partial_product * input[i];
         }
     }

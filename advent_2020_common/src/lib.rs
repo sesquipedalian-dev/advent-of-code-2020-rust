@@ -1,5 +1,6 @@
 use std::fs::File;
 use std::io::prelude::*;
+use std::collections::HashSet;
 
 /// Read the puzzle input file; filename defaults to 'input.txt' 
 /// unless specified in the first command line argument
@@ -35,6 +36,31 @@ pub fn input_to_nums(input: &[String]) -> Vec<u32> {
         .collect()
 }
 
+/// search for a vector of u32s looking for 2 numbers that sum to the sum_looked_for
+/// Some(v) if found, None otherwise.
+/// 
+pub fn find_complements(input: &[u32], sum_looked_for: u32, needs_multiply: bool) -> Option<u32> {
+    let mut seen_complements: HashSet<u32> = HashSet::new();  
+    for current in input.iter() {
+        if sum_looked_for < *current {
+            continue;
+        }
+
+        let my_complement = sum_looked_for - current;
+
+        if seen_complements.contains(&current) {
+            if needs_multiply {
+                return Some(current * my_complement);
+            } else {
+                return Some(0); // caller doesn't care about value of result
+            }
+        }
+
+        seen_complements.insert(my_complement);
+    }
+    None
+}
+
 #[derive(Debug)]
 pub struct Error{pub msg: String}
 
@@ -46,3 +72,4 @@ impl Error {
         Err(Error{msg:message})
     }
 }
+
