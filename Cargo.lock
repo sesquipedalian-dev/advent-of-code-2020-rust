@@ -21,6 +21,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "advent_2020_day_11"
+version = "0.1.0"
+dependencies = [
+ "advent_2020_common",
+]
+
+[[package]]
 name = "advent_2020_day_2"
 version = "0.1.0"
 dependencies = [
