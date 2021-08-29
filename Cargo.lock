@@ -28,6 +28,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "advent_2020_day_12"
+version = "0.1.0"
+dependencies = [
+ "advent_2020_common",
+ "regex",
+]
+
+[[package]]
 name = "advent_2020_day_2"
 version = "0.1.0"
 dependencies = [

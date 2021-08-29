@@ -12,6 +12,3 @@ fn main() -> Result<(), Error> {
     println!("Second output: {}", second(&mut input).unwrap());
     Ok(())
 }
-
-// 1040 - too low
-// 2080 - too high
