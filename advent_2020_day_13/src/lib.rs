@@ -40,7 +40,7 @@ pub fn first(input: &BusProbInput) -> Result<u32, Error> {
     Ok((found_id - found_mod) * found_id)
 }
 
-pub fn second(input: &BusProbInput) -> Result<u64, Error> {
+pub fn second_old(input: &BusProbInput) -> Result<u64, Error> {
     // OK so, the largest number in the input bus_ids is worth basing our work around
     // since it will have the fewest even multiples to check
     //
@@ -86,6 +86,22 @@ pub fn second(input: &BusProbInput) -> Result<u64, Error> {
     };
 
     Ok(multiple - largest_bus_id_index as u64)
+}
+
+// thread on this: https://www.reddit.com/r/adventofcode/comments/kc60ri/2020_day_13_can_anyone_give_me_a_hint_for_part_2/
+pub fn second(input: &BusProbInput) -> Result<u64, Error> {
+    let mut result = 1;
+    let mut mode = 1;
+    for (offset, bus_id) in input.in_service_bus_ids.iter().enumerate()
+        .filter(|(_, id)| **id != 1) 
+        .map(|(i, id)| (i, *id as u64))
+    {
+        while (result + offset as u64) % bus_id != 0 {
+            result += mode;
+        }
+        mode *= bus_id;
+    }
+    Ok(result)
 }
 
 #[cfg(test)]
