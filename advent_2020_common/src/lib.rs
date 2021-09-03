@@ -2,6 +2,8 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::collections::HashSet;
 
+pub mod life;
+
 /// Read the puzzle input file; filename defaults to 'input.txt' 
 /// unless specified in the first command line argument
 /// 
