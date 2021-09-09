@@ -28,7 +28,6 @@ impl std::convert::TryInto<usize> for TwoD {
         let ok_val = match self {
             TwoD::X => 0,
             TwoD::Y => 1,
-            _ => return Error::new("bad dim")
         };
         Ok(ok_val)
     }
@@ -64,7 +63,6 @@ impl std::convert::TryInto<usize> for ThreeD {
             ThreeD::X => 0,
             ThreeD::Y => 1,
             ThreeD::Z => 2,
-            _ => return Error::new("bad dim")
         };
         Ok(ok_val)
     }
@@ -103,7 +101,6 @@ impl std::convert::TryInto<usize> for FourD {
             FourD::Y => 1,
             FourD::Z => 2,
             FourD::T => 3,
-            _ => return Error::new("bad dim")
         };
         Ok(ok_val)
     }
@@ -212,11 +209,10 @@ impl<DimensionType> LifeSpace<DimensionType> where
 {
     pub fn new(input: &[String], dimensions: usize) -> Result<Self, Error> {
         let mut row = 0;
-        let mut column = 0;
         let mut result = LifeSpace::<DimensionType>{spots: HashMap::new(), tentative_spots: HashMap::new()};
 
         for line in input.iter(){
-            column = 0;
+            let mut column = 0;
             for spot in line.chars() {
                 let new_opt: LifeOption = match spot {
                     '#' => LifeOption::Occupied,
@@ -268,7 +264,7 @@ impl<DimensionType> LifeSpace<DimensionType> where
         let mut accum = String::new();
 
         let mut maxes: Vec<usize> = Vec::new();
-        for (coord, value) in self.spots.iter() {
+        for (coord, _) in self.spots.iter() {
             if maxes.len() == 0 { 
                 maxes = coord.dim.iter().map(|_| 0).collect();
             }
@@ -322,66 +318,6 @@ impl<DimensionType> LifeSpace<DimensionType> where
 
         Ok(())
     }
-    // pub fn to_string(&self) -> String {
-    //     // for dims 1 + 2 print a square
-    //     // for dims 3 + 4, say z / t == <num, num> and print the square
-        
-    //     let mut maxes: Vec<usize> = Vec::new();
-    //     for (coord, value) in self.spots.iter() {
-    //         if maxes.len() == 0 { 
-    //             maxes = coord.dim.iter().map(|_| 0).collect();
-    //         }
-
-    //         for (i, dimension_max) in maxes.iter().enumerate() {
-    //             if coord.dim[i] > *dimension_max {
-    //                 maxes[i] = coord.dim[i];
-    //             }
-    //         }
-    //     }
-
-    //     let max_dim = maxes.len() - 1;
-    //     let max_dim_max = maxes[max_dim];
-    //     let mut counters: Vec<(usize, usize)> = Vec::new(); // coordinate to be processed in dimension
-    //     for i in 0.. max_dim_max {
-    //         counters.push((max_dim, i));
-    //     }
-    //     let accum = String::new();
-    //     let current_higher_order_dims: Vec<usize> = Vec::new();
-    //     loop {
-    //         let (current_dim, counter) = counters.pop().unwrap();
-
-    //         match current_dim {
-    //             0 => {                    
-    //                 let new_coord_dim: Vec<usize> = counters.iter().map(|n| *n).collect();
-    //                 let next_char = self.spots.get(&Coord::<DimensionType>{dim: new_coord_dim});
-    //                 let next_char = match next_char {
-    //                     Some(LifeOption::Occupied) => '#',
-    //                     Some(LifeOption::Unoccupied) => 'L',
-    //                     _ => '.',
-    //                 };
-    //                 accum.push(next_char);
-    //             }
-    //             1 => {
-    //                 accum.push('\n');
-    //             }
-    //         }
-
-    //         counters[current_dim] += 1;
-    //         // if we haven't processed all the numbers in this dimension, add back this dimension's counter + 1
-    //         if counters[current_dim] < maxes[current_dim] {
-    //             counters.push(counter + 1)
-    //         } else if counters.len() > 1 {
-    //             // else we've hit the end of a dim; if this isn't the final dimension then increment in the next dim
-    //             let counter = counters.pop().unwrap();
-    //             counters.push(counter + 1)
-    //         } else {
-    //             // else last dimension is done, we can break 
-    //             break
-    //         }
-    //     }
-
-    //     accum
-    // }
 }
 
 
@@ -522,7 +458,7 @@ mod tests {
 
     #[test]
     fn test_to_string() {
-        let mut result = LifeSpace::<TwoD>::new(&example(), 2).unwrap();
+        let result = LifeSpace::<TwoD>::new(&example(), 2).unwrap();
         let mut expected: String = String::from("\n");
         expected.push_str(&example().join("\n"));
         expected.push('\n');
