@@ -34,6 +34,81 @@ impl std::convert::TryInto<usize> for TwoD {
     }
 }
 
+
+#[derive(Debug, PartialEq, Hash, Clone, Copy, Eq)]
+enum ThreeD {
+    X = 0, 
+    Y,
+    Z
+}
+
+impl std::convert::TryFrom<usize> for ThreeD {
+    type Error = Error;
+
+    fn try_from(value: usize) -> Result<Self, Self::Error> {
+        let ok_val = match value {
+            0 => ThreeD::X,
+            1 => ThreeD::Y,
+            2 => ThreeD::Z,
+            _ => return Error::new("bad dim")
+        };
+        Ok(ok_val)
+    }
+}
+
+impl std::convert::TryInto<usize> for ThreeD {
+    type Error = Error;
+
+    fn try_into(self) -> Result<usize, Self::Error> {
+        let ok_val = match self {
+            ThreeD::X => 0,
+            ThreeD::Y => 1,
+            ThreeD::Z => 2,
+            _ => return Error::new("bad dim")
+        };
+        Ok(ok_val)
+    }
+}
+
+
+#[derive(Debug, PartialEq, Hash, Clone, Copy, Eq)]
+enum FourD {
+    X = 0, 
+    Y,
+    Z,
+    T,
+}
+
+impl std::convert::TryFrom<usize> for FourD {
+    type Error = Error;
+
+    fn try_from(value: usize) -> Result<Self, Self::Error> {
+        let ok_val = match value {
+            0 => FourD::X,
+            1 => FourD::Y,
+            2 => FourD::Z,
+            3 => FourD::T,
+            _ => return Error::new("bad dim")
+        };
+        Ok(ok_val)
+    }
+}
+
+impl std::convert::TryInto<usize> for FourD {
+    type Error = Error;
+
+    fn try_into(self) -> Result<usize, Self::Error> {
+        let ok_val = match self {
+            FourD::X => 0,
+            FourD::Y => 1,
+            FourD::Z => 2,
+            FourD::T => 3,
+            _ => return Error::new("bad dim")
+        };
+        Ok(ok_val)
+    }
+}
+
 pub struct Assigner<DimensionType> where DimensionType : std::convert::TryInto<usize> {
     spots: HashMap<Coord<DimensionType>, LifeOption>,
 }
@@ -155,7 +230,7 @@ impl<DimensionType> LifeSpace<DimensionType> where
                     4 => Coord::<DimensionType>::new_4d(row, column, 0, 0),
                     _ => return Error::new("unknown dimensionality requested"),
                 };
-                
+
                 result.spots.insert(new_coord, new_opt);
                 column += 1;
             }
@@ -211,24 +286,33 @@ impl<DimensionType> LifeSpace<DimensionType> where
     }
 
     pub fn to_string_rec(&self, max_dims: &Vec<usize>, dim: usize, prev_dim_coords: &VecDeque<usize>, accum: &mut String) -> Result<(), Error> {
-        let current_dimension = DimensionType::try_from(dim).or(Error::new("wrong dim bro"))?;
-        
         for i in 0..=max_dims[dim] {
             let mut this_coord = prev_dim_coords.clone();
             this_coord.push_front(i);
 
             if dim == 0 {
-                let this_coord = Coord::<DimensionType>{dim: this_coord.iter().map(|s| *s).rev().collect(), pd: PhantomData};
+                // we have to reverse the x / y coordinates to print in rows
+                let new_coord = 
+                    this_coord.iter().take(2).rev()
+                    .chain(this_coord.iter().skip(2));
+                let this_coord = Coord::<DimensionType>{dim: new_coord.map(|s| *s).collect(), pd: PhantomData};
+                
                 if let Some(v) = self.spots.get(&this_coord) {
-                    println!("Iteration {:?} {:?}", this_coord, v);
                     let next_char = match v {
                         LifeOption::Occupied => '#',
                         LifeOption::Unoccupied => 'L',
                         _ =>  '.',
                     };
                     accum.push(next_char);
+                } else {
+                    accum.push('.');
                 }
             } else {
+                if dim > 1 {
+                    accum.push_str(&format!(" {}={} ", dim, i));
+                } else if i == 0 {
+                    accum.push('\n');
+                }
                 self.to_string_rec(&max_dims, dim - 1, &this_coord, accum)?;
                 if dim == 1 {
                     accum.push('\n');
@@ -439,9 +523,19 @@ mod tests {
     #[test]
     fn test_to_string() {
         let mut result = LifeSpace::<TwoD>::new(&example(), 2).unwrap();
-        let mut expected: String = example().join("\n");
+        let mut expected: String = String::from("\n");
+        expected.push_str(&example().join("\n"));
         expected.push('\n');
         let result = result.to_string().unwrap();
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_to_string_3d() { 
+        let mut ls = LifeSpace::<ThreeD>::new(&example(), 3).unwrap();
+        ls.spots.insert(Coord::<ThreeD>::new_3d(0, 0, 1), LifeOption::Occupied);
+        let result = ls.to_string().unwrap();
+        let expected = " 2=0 \nL.LL.LL.LL\nLLLLLLL.LL\nL.L.L..L..\nLLLL.LL.LL\nL.LL.LL.LL\nL.LLLLL.LL\n..L.L.....\nLLLLLLLLLL\nL.LLLLLL.L\nL.LLLLL.LL\n 2=1 \n#.........\n..........\n..........\n..........\n..........\n..........\n..........\n..........\n..........\n..........\n";
         assert_eq!(result, expected);
     }
 
