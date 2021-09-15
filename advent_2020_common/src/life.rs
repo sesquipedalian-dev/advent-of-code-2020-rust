@@ -3,7 +3,7 @@ use super::Error;
 use std::marker::PhantomData;
 
 #[derive(Debug, PartialEq, Hash, Clone, Copy, Eq)]
-enum TwoD {
+pub enum TwoD {
     X = 0, 
     Y
 }
@@ -35,7 +35,7 @@ impl std::convert::TryInto<usize> for TwoD {
 
 
 #[derive(Debug, PartialEq, Hash, Clone, Copy, Eq)]
-enum ThreeD {
+pub enum ThreeD {
     X = 0, 
     Y,
     Z
@@ -70,7 +70,7 @@ impl std::convert::TryInto<usize> for ThreeD {
 
 
 #[derive(Debug, PartialEq, Hash, Clone, Copy, Eq)]
-enum FourD {
+pub enum FourD {
     X = 0, 
     Y,
     Z,
@@ -249,15 +249,11 @@ impl<DimensionType> LifeSpace<DimensionType> where
     }
 
     pub fn neighbors(&self, row: usize, column: usize) -> NeighborIterator<DimensionType> {
-        NeighborIterator::<DimensionType>{spots: &self.spots, row, column, z: 0, count: 0, skip_chars: None, direction_count: 1, use_z: false}
-    }
-
-    pub fn neighbors_3d(&self, row: usize, column: usize, z: usize) -> NeighborIterator<DimensionType> {
-        NeighborIterator::<DimensionType>{spots: &self.spots, row, column, z, count: 0, skip_chars: None, direction_count: 1, use_z: true}
+        NeighborIterator::<DimensionType>{spots: &self.spots, row, column, count: 0, skip_chars: None, direction_count: 1}
     }
 
     pub fn neighbors_skip_floor(&self, row: usize, column: usize) -> NeighborIterator<DimensionType> {
-        NeighborIterator::<DimensionType>{spots: &self.spots, row, column, z: 0, count: 0, skip_chars: Some(LifeOption::Floor), direction_count: 1, use_z: false}
+        NeighborIterator::<DimensionType>{spots: &self.spots, row, column, count: 0, skip_chars: Some(LifeOption::Floor), direction_count: 1}
     }
 
     pub fn to_string(&self) -> Result<String, Error> {
@@ -320,62 +316,41 @@ impl<DimensionType> LifeSpace<DimensionType> where
     }
 }
 
-
-pub struct NeighborIterator<'a, DimensionType> where DimensionType: std::convert::TryInto<usize> {
+pub struct NeighborIterator<'a, DimensionType> where
+    DimensionType: std::convert::TryInto<usize>,
+    DimensionType: std::convert::TryFrom<usize>
+{
     spots: &'a HashMap<Coord<DimensionType>, LifeOption>,
     row: usize, 
     column: usize,
-    z: usize,
     count: usize,
     skip_chars: Option<LifeOption>,
-    direction_count: isize,
-    use_z: bool,
+    direction_count: isize
 }
 
-impl<DimensionType> NeighborIterator<'_, DimensionType> where DimensionType: std::convert::TryInto<usize> {
+impl<DimensionType> NeighborIterator<'_, DimensionType> where
+    DimensionType: std::convert::TryInto<usize>,
+    DimensionType: std::convert::TryFrom<usize>
+{
     fn next_direction(&mut self) {
         self.direction_count = 1;
         self.count += 1;
     }
 }
 
-impl<DimensionType> Iterator for NeighborIterator<'_, DimensionType> where 
-    DimensionType: std::convert::TryInto<usize>,
-    Coord<DimensionType> : Eq + std::hash::Hash, 
-{
+impl Iterator for NeighborIterator<'_, TwoD> {
     type Item = LifeOption;
 
     fn next(&mut self) -> Option<LifeOption> {
-        let (row_diff, column_diff, z_diff) = match self.count {
-            // z = 0
-            0 => (0-self.direction_count, 0-self.direction_count, 0),
-            1 => (0-self.direction_count, 0, 0),
-            2 => (0-self.direction_count, self.direction_count, 0),
-            3 => (0, 0-self.direction_count, 0),
-            4 => (0, self.direction_count, 0),
-            5 => (self.direction_count, 0-self.direction_count, 0),
-            6 => (self.direction_count, 0, 0),
-            7 => (self.direction_count, self.direction_count, 0),
-            // z = -1
-            8 if self.use_z => (0-self.direction_count, 0-self.direction_count, -1),
-            9 if self.use_z => (0-self.direction_count, 0, -1),
-            10 if self.use_z => (0-self.direction_count, self.direction_count, -1),
-            11 if self.use_z => (0, 0-self.direction_count, -1),
-            12 if self.use_z => (0, self.direction_count, -1),
-            13 if self.use_z => (self.direction_count, 0-self.direction_count, -1),
-            14 if self.use_z => (self.direction_count, 0, -1),
-            15 if self.use_z => (self.direction_count, self.direction_count, -1),
-            16 if self.use_z => (0, 0, -1),
-            // z = +1
-            17 if self.use_z => (0-self.direction_count, 0-self.direction_count, 1),
-            18 if self.use_z => (0-self.direction_count, 0, 1),
-            19 if self.use_z => (0-self.direction_count, self.direction_count, 1),
-            20 if self.use_z => (0, 0-self.direction_count, 1),
-            21 if self.use_z => (0, self.direction_count, 1),
-            22 if self.use_z => (self.direction_count, 0-self.direction_count, 1),
-            23 if self.use_z => (self.direction_count, 0, 1),
-            24 if self.use_z => (self.direction_count, self.direction_count, 1),
-            25 if self.use_z => (0, 0, 1),
+        let (row_diff, column_diff) = match self.count {
+            0 => (0-self.direction_count, 0-self.direction_count),
+            1 => (0-self.direction_count, 0),
+            2 => (0-self.direction_count, self.direction_count),
+            3 => (0, 0-self.direction_count),
+            4 => (0, self.direction_count),
+            5 => (self.direction_count, 0-self.direction_count),
+            6 => (self.direction_count, 0),
+            7 => (self.direction_count, self.direction_count),
             _ => return None
         };
 
@@ -395,15 +370,7 @@ impl<DimensionType> Iterator for NeighborIterator<'_, DimensionType> where
             x => x as usize
         };
 
-        let z = match (self.z as isize) + z_diff {
-            z if z < 0 => { 
-                self.next_direction();
-                return self.next()
-            }
-            z => z as usize
-        };
-        
-        let value = self.spots.get(&Coord::<DimensionType>::new_3d(row, column, z))
+        let value = self.spots.get(&Coord::<TwoD>::new_2d(row, column))
             .map(|s| *s);
 
         match value {
@@ -456,6 +423,22 @@ mod tests {
         assert_eq!(result.at_2d(5, 5), Some(&LifeOption::Occupied));
     }
 
+    // #[test]
+    // fn test_direction_iter() {
+    //     let result = LifeSpace::<TwoD>::new(&example(), 2).unwrap();
+    //     let mut iter = DirectionIterator::<TwoD>{
+    //         spots: &result.spots,
+    //         direction: vec!(1, 1),
+    //         original_coord: Coord::new_2d(0, 0),
+    //         count: 0,
+    //         skip_chars: LifeOption::Unoccupied,
+    //     };
+    //     assert_eq!(iter.next(), Some(LifeOption::Floor));
+    //     assert_eq!(iter.next(), Some(LifeOption::Floor));
+    //     assert_eq!(iter.next(), Some(LifeOption::Floor));
+    //     assert_eq!(iter.next(), None);
+    // }
+
     #[test]
     fn test_to_string() {
         let result = LifeSpace::<TwoD>::new(&example(), 2).unwrap();
@@ -475,92 +458,92 @@ mod tests {
         assert_eq!(result, expected);
     }
 
-    // #[test]
-    // fn test_neighbors() {
-    //     let mut input = LifeSpace::<TwoD>::new(&example(), 2).unwrap();
-    //     let iter = input.neighbors(1, 1);
-    //     let result: Vec<LifeOption> = iter.collect();
-    //     assert_eq!(result, vec!(
-    //         LifeOption::Unoccupied, LifeOption::Floor, LifeOption::Unoccupied,
-    //         LifeOption::Unoccupied,                    LifeOption::Unoccupied,
-    //         LifeOption::Unoccupied, LifeOption::Floor, LifeOption::Unoccupied,
-    //     ));
-    // }
+    #[test]
+    fn test_neighbors() {
+        let mut input = LifeSpace::<TwoD>::new(&example(), 2).unwrap();
+        let iter = input.neighbors(1, 1);
+        let result: Vec<LifeOption> = iter.collect();
+        assert_eq!(result, vec!(
+            LifeOption::Unoccupied, LifeOption::Floor, LifeOption::Unoccupied,
+            LifeOption::Unoccupied,                    LifeOption::Unoccupied,
+            LifeOption::Unoccupied, LifeOption::Floor, LifeOption::Unoccupied,
+        ));
+    }
 
-    // #[test]
-    // fn test_neighbors_limits() {
-    //     let mut input = LifeSpace::<TwoD>::new(&example(), 2).unwrap();
-    //     let iter = input.neighbors(9, 0);
-    //     let result: Vec<LifeOption> = iter.collect();
-    //     assert_eq!(result, vec!(
-    //         LifeOption::Unoccupied, LifeOption::Floor, LifeOption::Floor,
-    //     ));
-    // }
+    #[test]
+    fn test_neighbors_limits() {
+        let mut input = LifeSpace::<TwoD>::new(&example(), 2).unwrap();
+        let iter = input.neighbors(9, 0);
+        let result: Vec<LifeOption> = iter.collect();
+        assert_eq!(result, vec!(
+            LifeOption::Unoccupied, LifeOption::Floor, LifeOption::Floor,
+        ));
+    }
 
-    // #[test]
-    // fn test_neighbors_right_limit() {
-    //     let mut input = LifeSpace::<TwoD>::new(&example(), 2).unwrap();
-    //     let iter = input.neighbors(7, 9);
-    //     let result: Vec<LifeOption> = iter.collect();
-    //     assert_eq!(result, vec!(
-    //         LifeOption::Floor, LifeOption::Floor, 
-    //         LifeOption::Unoccupied, 
-    //         LifeOption::Floor, LifeOption::Unoccupied,
-    //     ));
-    // }
+    #[test]
+    fn test_neighbors_right_limit() {
+        let mut input = LifeSpace::<TwoD>::new(&example(), 2).unwrap();
+        let iter = input.neighbors(7, 9);
+        let result: Vec<LifeOption> = iter.collect();
+        assert_eq!(result, vec!(
+            LifeOption::Floor, LifeOption::Floor, 
+            LifeOption::Unoccupied, 
+            LifeOption::Floor, LifeOption::Unoccupied,
+        ));
+    }
 
-    // #[test]
-    // fn test_neigbors_skip_floor_lots() {
-    //     let example = vec!(
-    //         String::from(".......#."),
-    //         String::from("...#....."),
-    //         String::from(".#......."),
-    //         String::from("........."),
-    //         String::from("..#L....#"),
-    //         String::from("....#...."),
-    //         String::from("........."),
-    //         String::from("#........"),
-    //         String::from("...#....."),
-    //     );
-    //     let input = LifeSpace::<TwoD>::new(&example, 2).unwrap();
-    //     let iter = input.neighbors_skip_floor(4, 3);
-    //     let result: Vec<LifeOption> = iter.collect();
-    //     assert_eq!(result, vec!(
-    //         LifeOption::Occupied, LifeOption::Occupied, LifeOption::Occupied,
-    //         LifeOption::Occupied,                       LifeOption::Occupied,
-    //         LifeOption::Occupied, LifeOption::Occupied, LifeOption::Occupied,
-    //     ));
-    // }
+    #[test]
+    fn test_neigbors_skip_floor_lots() {
+        let example = vec!(
+            String::from(".......#."),
+            String::from("...#....."),
+            String::from(".#......."),
+            String::from("........."),
+            String::from("..#L....#"),
+            String::from("....#...."),
+            String::from("........."),
+            String::from("#........"),
+            String::from("...#....."),
+        );
+        let input = LifeSpace::<TwoD>::new(&example, 2).unwrap();
+        let iter = input.neighbors_skip_floor(4, 3);
+        let result: Vec<LifeOption> = iter.collect();
+        assert_eq!(result, vec!(
+            LifeOption::Occupied, LifeOption::Occupied, LifeOption::Occupied,
+            LifeOption::Occupied,                       LifeOption::Occupied,
+            LifeOption::Occupied, LifeOption::Occupied, LifeOption::Occupied,
+        ));
+    }
 
-    // #[test]
-    // fn test_neighbors_skip_floor_one() {
-    //     let example = vec!(
-    //         String::from("............."),
-    //         String::from(".L.L.#.#.#.#."),
-    //         String::from("............."),
-    //     );
-    //     let input = LifeSpace::<TwoD>::new(&example, 2).unwrap();
-    //     let iter = input.neighbors_skip_floor(1, 1);
-    //     let result: Vec<LifeOption> = iter.collect();
-    //     assert_eq!(result, vec!(
-    //         LifeOption::Unoccupied,
-    //     ));
-    // }
+    #[test]
+    fn test_neighbors_skip_floor_one() {
+        let example = vec!(
+            String::from("............."),
+            String::from(".L.L.#.#.#.#."),
+            String::from("............."),
+        );
+        let input = LifeSpace::<TwoD>::new(&example, 2).unwrap();
+        let iter = input.neighbors_skip_floor(1, 1);
+        let result: Vec<LifeOption> = iter.collect();
+        assert_eq!(result, vec!(
+            LifeOption::Unoccupied,
+        ));
+    }
 
-    // #[test]
-    // fn test_neighbors_skip_none() {
-    //     let example = vec!(
-    //         String::from(".##.##."),
-    //         String::from("#.#.#.#"),
-    //         String::from("##...##"),
-    //         String::from("...L..."),
-    //         String::from("##...##"),
-    //         String::from("#.#.#.#"),
-    //         String::from(".##.##."),
-    //     );
-    //     let input = LifeSpace::<TwoD>::new(&example, 2).unwrap();
-    //     let iter = input.neighbors_skip_floor(3, 3);
-    //     let result: Vec<LifeOption> = iter.collect();
-    //     assert_eq!(result, vec!());
-    // }
+    #[test]
+    fn test_neighbors_skip_none() {
+        let example = vec!(
+            String::from(".##.##."),
+            String::from("#.#.#.#"),
+            String::from("##...##"),
+            String::from("...L..."),
+            String::from("##...##"),
+            String::from("#.#.#.#"),
+            String::from(".##.##."),
+        );
+        let input = LifeSpace::<TwoD>::new(&example, 2).unwrap();
+        let iter = input.neighbors_skip_floor(3, 3);
+        let result: Vec<LifeOption> = iter.collect();
+        assert_eq!(result, vec!());
+    }
 }

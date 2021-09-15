@@ -1,21 +1,21 @@
 use advent_2020_common::Error;
 use advent_2020_common::life::*;
 
-pub fn first(input: &mut LifeSpace) -> Result<usize, Error> {   
+pub fn first(input: &mut LifeSpace<TwoD>) -> Result<usize, Error> {   
     loop {
         let mut assigner = Assigner::new();
 
         for (coord, value) in input.spots.iter() {
-            let occupied_count = input.neighbors(coord.row(), coord.column())
+            let occupied_count = input.neighbors(coord.at(TwoD::X)?, coord.at(TwoD::Y)?)
                 .filter(|v| *v == LifeOption::Occupied)
                 .count();
             match value {
                 LifeOption::Floor => continue,
                 LifeOption::Occupied if occupied_count >= 4 => {
-                    assigner.assign(coord.row(), coord.column(), LifeOption::Unoccupied)
+                    assigner.assign(coord.at(TwoD::X)?, coord.at(TwoD::Y)?, LifeOption::Unoccupied)
                 },
                 LifeOption::Unoccupied if occupied_count == 0 => {
-                    assigner.assign(coord.row(), coord.column(), LifeOption::Occupied)
+                    assigner.assign(coord.at(TwoD::X)?, coord.at(TwoD::Y)?, LifeOption::Occupied)
                 }
                 _ => ()
             };
@@ -32,21 +32,21 @@ pub fn first(input: &mut LifeSpace) -> Result<usize, Error> {
     Ok(input.spots.iter().filter(|(_, s)| **s == LifeOption::Occupied).count())
 }
 
-pub fn second(input: &mut LifeSpace) -> Result<usize, Error> {
+pub fn second(input: &mut LifeSpace<TwoD>) -> Result<usize, Error> {
     loop {
         let mut assigner = Assigner::new();
 
         for (coord, value) in input.spots.iter() {
-            let occupied_count = input.neighbors_skip_floor(coord.row(), coord.column())
+            let occupied_count = input.neighbors_skip_floor(coord.at(TwoD::X)?, coord.at(TwoD::Y)?)
                 .filter(|v| *v == LifeOption::Occupied)
                 .count();
             match value {
                 LifeOption::Floor => continue,
                 LifeOption::Occupied if occupied_count >= 5 => {
-                    assigner.assign(coord.row(), coord.column(), LifeOption::Unoccupied)
+                    assigner.assign(coord.at(TwoD::X)?, coord.at(TwoD::Y)?, LifeOption::Unoccupied)
                 },
                 LifeOption::Unoccupied if occupied_count == 0 => {
-                    assigner.assign(coord.row(), coord.column(), LifeOption::Occupied)
+                    assigner.assign(coord.at(TwoD::X)?, coord.at(TwoD::Y)?, LifeOption::Occupied)
                 }
                 _ => ()
             };
@@ -84,14 +84,14 @@ mod tests {
 
     #[test]
     fn test_first() {
-        let mut input = LifeSpace::new(&example()).unwrap();
+        let mut input = LifeSpace::<TwoD>::new(&example(), 2).unwrap();
         let result = first(&mut input).unwrap();
         assert_eq!(result, 37);
     }
 
     #[test]
     fn test_second() {
-        let mut input = LifeSpace::new(&example()).unwrap();
+        let mut input = LifeSpace::<TwoD>::new(&example(), 2).unwrap();
         let result = second(&mut input).unwrap();
         assert_eq!(result, 26);
     }
