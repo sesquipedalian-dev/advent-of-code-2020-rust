@@ -107,7 +107,7 @@ impl std::convert::TryInto<usize> for FourD {
 }
 
 pub struct Assigner<DimensionType> where DimensionType : std::convert::TryInto<usize> {
-    spots: HashMap<Coord<DimensionType>, LifeOption>,
+    pub spots: HashMap<Coord<DimensionType>, LifeOption>,
 }
 
 impl<DimensionType> Assigner<DimensionType> where 
@@ -118,11 +118,11 @@ impl<DimensionType> Assigner<DimensionType> where
         Assigner::<DimensionType>{spots: HashMap::new()}
     }
 
-    pub fn assign(&mut self, row: usize, column: usize, value: LifeOption) {
+    pub fn assign(&mut self, row: isize, column: isize, value: LifeOption) {
         self.spots.insert(Coord::<DimensionType>::new_2d(row, column), value);
     }
 
-    pub fn assign_3d(&mut self, row: usize, column: usize, z: usize, value: LifeOption) {
+    pub fn assign_3d(&mut self, row: isize, column: isize, z: isize, value: LifeOption) {
         self.spots.insert(Coord::<DimensionType>::new_3d(row, column, z), value);
     }
     
@@ -147,8 +147,8 @@ pub enum LifeOption {
 
 #[derive(std::cmp::Eq, Debug, PartialEq, Hash)]
 pub struct Coord<DimensionType> where DimensionType : std::convert::TryInto<usize> {
-    dim: Vec<usize>,
-    pd: PhantomData<DimensionType>,
+    pub dim: Vec<isize>,
+    pub pd: PhantomData<DimensionType>,
 }
 
 // impl<DimensionType, ValueType: Eq> Eq for Coord<DimensionType, ValueType> {
@@ -160,34 +160,34 @@ pub struct Coord<DimensionType> where DimensionType : std::convert::TryInto<usiz
 impl<DimensionType> Coord<DimensionType> where 
     DimensionType: std::convert::TryInto<usize>
 {
-    pub fn new_1d(v: usize) -> Self {
+    pub fn new_1d(v: isize) -> Self {
         Coord::<DimensionType>{dim: vec!(v), pd: PhantomData}
     }
 
-    pub fn new_2d(u: usize, v: usize) -> Self {
+    pub fn new_2d(u: isize, v: isize) -> Self {
         Coord::<DimensionType>{dim: vec!(u, v), pd: PhantomData}
     }
 
-    pub fn new_3d(t: usize, u: usize, v: usize) -> Self {
+    pub fn new_3d(t: isize, u: isize, v: isize) -> Self {
         Coord::<DimensionType>{dim: vec!(t, u, v), pd: PhantomData}
     }
 
-    pub fn new_4d(s: usize, t: usize, u: usize, v: usize) -> Self {
+    pub fn new_4d(s: isize, t: isize, u: isize, v: isize) -> Self {
         Coord::<DimensionType>{dim: vec!(s, t, u, v), pd: PhantomData}
     }
 
-    pub fn at(&self, dimension: DimensionType) -> Result<usize, DimensionType::Error> {
+    pub fn at(&self, dimension: DimensionType) -> Result<isize, DimensionType::Error> {
         Ok(self.dim[dimension.try_into()?])
     }
 
-    pub fn set(&mut self, dimension: DimensionType, value: usize) -> Result<(), DimensionType::Error> {
+    pub fn set(&mut self, dimension: DimensionType, value: isize) -> Result<(), DimensionType::Error> {
         Ok(self.dim[dimension.try_into()?] = value)
     }
 }
 
 impl<DimensionType> Clone for Coord<DimensionType> where DimensionType: std::convert::TryInto<usize> {
     fn clone(&self) -> Self {
-        let mut new_vec: Vec<usize> = Vec::new();
+        let mut new_vec: Vec<isize> = Vec::new();
         for i in self.dim.iter() {
             new_vec.push(*i)
         }
@@ -236,49 +236,59 @@ impl<DimensionType> LifeSpace<DimensionType> where
         Ok(result)
     }
 
-    pub fn at_2d(&self, row: usize, column: usize) -> Option<&LifeOption> {
+    pub fn at_2d(&self, row: isize, column: isize) -> Option<&LifeOption> {
         self.spots.get(&Coord::<DimensionType>::new_2d(row, column))
     }
 
-    pub fn at_3d(&self, row: usize, column: usize, z: usize) -> Option<&LifeOption> {
+    pub fn at_3d(&self, row: isize, column: isize, z: isize) -> Option<&LifeOption> {
         self.spots.get(&Coord::<DimensionType>::new_3d(row, column, z))
     }
 
-    pub fn at_4d(&self, row: usize, column: usize, z: usize, t: usize) -> Option<&LifeOption> {
+    pub fn at_4d(&self, row: isize, column: isize, z: isize, t: isize) -> Option<&LifeOption> {
         self.spots.get(&Coord::<DimensionType>::new_4d(row, column, z, t))
     }
 
-    pub fn neighbors(&self, row: usize, column: usize) -> NeighborIterator<DimensionType> {
+    pub fn neighbors(&self, row: isize, column: isize) -> NeighborIterator<DimensionType> {
         NeighborIterator::<DimensionType>{spots: &self.spots, row, column, count: 0, skip_chars: None, direction_count: 1}
     }
 
-    pub fn neighbors_skip_floor(&self, row: usize, column: usize) -> NeighborIterator<DimensionType> {
+    pub fn neighbors_skip_floor(&self, row: isize, column: isize) -> NeighborIterator<DimensionType> {
         NeighborIterator::<DimensionType>{spots: &self.spots, row, column, count: 0, skip_chars: Some(LifeOption::Floor), direction_count: 1}
     }
 
     pub fn to_string(&self) -> Result<String, Error> {
         let mut accum = String::new();
 
-        let mut maxes: Vec<usize> = Vec::new();
+        let mut min_maxes: Vec<(isize, isize)> = Vec::new();
         for (coord, _) in self.spots.iter() {
-            if maxes.len() == 0 { 
-                maxes = coord.dim.iter().map(|_| 0).collect();
+            if min_maxes.len() == 0 { 
+                min_maxes = coord.dim.iter().map(|_| (0, 0)).collect();
             }
 
-            for (i, dimension_max) in maxes.iter_mut().enumerate() {
-                if coord.dim[i] > *dimension_max {
-                    *dimension_max = coord.dim[i];
+            for (i, (dim_min, dim_max)) in min_maxes.iter_mut().enumerate() {
+                if coord.dim[i] > *dim_max {
+                    *dim_max = coord.dim[i];
+                }
+
+                if coord.dim[i] < *dim_min {
+                    *dim_min = coord.dim[i];
                 }
             }
         }
 
-        let dummy: VecDeque<usize> = VecDeque::new();
-        self.to_string_rec(&maxes, maxes.len() - 1, &dummy, &mut accum)?;
+        let dummy: VecDeque<isize> = VecDeque::new();
+        // swap x and y min / max
+        let min_maxes = min_maxes.iter().take(2).rev()
+            .chain(min_maxes.iter().skip(2))
+            .map(|s| *s)
+            .collect();
+        println!("min maxes {:?}", min_maxes);
+        self.to_string_rec(&min_maxes, min_maxes.len() - 1, &dummy, &mut accum)?;
         Ok(accum)
     }
 
-    pub fn to_string_rec(&self, max_dims: &Vec<usize>, dim: usize, prev_dim_coords: &VecDeque<usize>, accum: &mut String) -> Result<(), Error> {
-        for i in 0..=max_dims[dim] {
+    pub fn to_string_rec(&self, min_maxes: &Vec<(isize, isize)>, dim: usize, prev_dim_coords: &VecDeque<isize>, accum: &mut String) -> Result<(), Error> {
+        for i in min_maxes[dim].0 ..= min_maxes[dim].1 {
             let mut this_coord = prev_dim_coords.clone();
             this_coord.push_front(i);
 
@@ -305,7 +315,10 @@ impl<DimensionType> LifeSpace<DimensionType> where
                 } else if i == 0 {
                     accum.push('\n');
                 }
-                self.to_string_rec(&max_dims, dim - 1, &this_coord, accum)?;
+                if dim == 1 {
+                    accum.push_str(&format!("x = {} ", i))
+                }                
+                self.to_string_rec(&min_maxes, dim - 1, &this_coord, accum)?;
                 if dim == 1 {
                     accum.push('\n');
                 }
@@ -321,9 +334,9 @@ pub struct NeighborIterator<'a, DimensionType> where
     DimensionType: std::convert::TryFrom<usize>
 {
     spots: &'a HashMap<Coord<DimensionType>, LifeOption>,
-    row: usize, 
-    column: usize,
-    count: usize,
+    row: isize, 
+    column: isize,
+    count: isize,
     skip_chars: Option<LifeOption>,
     direction_count: isize
 }
@@ -359,7 +372,7 @@ impl Iterator for NeighborIterator<'_, TwoD> {
                 self.next_direction();
                 return self.next()
             },
-            x => x as usize
+            x => x as isize
         };
 
         let column = match (self.column as isize) + column_diff {
@@ -367,7 +380,7 @@ impl Iterator for NeighborIterator<'_, TwoD> {
                 self.next_direction();
                 return self.next()
             },
-            x => x as usize
+            x => x as isize
         };
 
         let value = self.spots.get(&Coord::<TwoD>::new_2d(row, column))
@@ -443,8 +456,8 @@ mod tests {
     fn test_to_string() {
         let result = LifeSpace::<TwoD>::new(&example(), 2).unwrap();
         let mut expected: String = String::from("\n");
-        expected.push_str(&example().join("\n"));
-        expected.push('\n');
+        let joined_str: String = example().iter().enumerate().map(|(x, s)| format!("x = {} {}\n", x, s)).collect();
+        expected.push_str(joined_str.as_str());
         let result = result.to_string().unwrap();
         assert_eq!(result, expected);
     }
@@ -454,7 +467,7 @@ mod tests {
         let mut ls = LifeSpace::<ThreeD>::new(&example(), 3).unwrap();
         ls.spots.insert(Coord::<ThreeD>::new_3d(0, 0, 1), LifeOption::Occupied);
         let result = ls.to_string().unwrap();
-        let expected = " 2=0 \nL.LL.LL.LL\nLLLLLLL.LL\nL.L.L..L..\nLLLL.LL.LL\nL.LL.LL.LL\nL.LLLLL.LL\n..L.L.....\nLLLLLLLLLL\nL.LLLLLL.L\nL.LLLLL.LL\n 2=1 \n#.........\n..........\n..........\n..........\n..........\n..........\n..........\n..........\n..........\n..........\n";
+        let expected = " 2=0 \nx = 0 L.LL.LL.LL\nx = 1 LLLLLLL.LL\nx = 2 L.L.L..L..\nx = 3 LLLL.LL.LL\nx = 4 L.LL.LL.LL\nx = 5 L.LLLLL.LL\nx = 6 ..L.L.....\nx = 7 LLLLLLLLLL\nx = 8 L.LLLLLL.L\nx = 9 L.LLLLL.LL\n 2=1 \nx = 0 #.........\nx = 1 ..........\nx = 2 ..........\nx = 3 ..........\nx = 4 ..........\nx = 5 ..........\nx = 6 ..........\nx = 7 ..........\nx = 8 ..........\nx = 9 ..........\n";
         assert_eq!(result, expected);
     }
 
