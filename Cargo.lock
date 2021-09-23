@@ -83,6 +83,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "advent_2020_day_19"
+version = "0.1.0"
+dependencies = [
+ "advent_2020_common",
+ "lazy_static",
+ "regex",
+]
+
+[[package]]
 name = "advent_2020_day_2"
 version = "0.1.0"
 dependencies = [
