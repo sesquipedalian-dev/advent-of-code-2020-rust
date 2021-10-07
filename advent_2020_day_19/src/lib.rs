@@ -1,6 +1,6 @@
 use advent_2020_common::Error;
 use std::collections::HashMap;
-use regex::Regex;
+use regex::{Regex, RegexBuilder};
 
 #[derive(Debug, PartialEq)]
 pub struct Input {
@@ -47,6 +47,35 @@ pub fn parse(input: &[String]) -> Result<Input, Error> {
 
 fn process_rule_recur(input: &Input, rule: &String) -> String {
     match rule {
+        r if r == "42 | 42 8" => {
+            // 42+
+            let rule_42 = input.rules.get(&42).unwrap();
+            let rule_42 = process_rule_recur(input, rule_42);
+
+            String::from(format!("({})+", rule_42))
+        },
+        r if r == "42 31 | 42 11 31" => { 
+            // ok, so any number of 42s followed by an equal number of 31s
+            // for any input this isn't allowed by regex, but we can guess an acceptable finite number of possible 
+            // repeats by looking at the input length - the max was around 100, / 2 = 50
+            // I tried this but I got errors about the regex being too big / complicated
+            // So experimentally about 10 iterations got me an answer
+            let rule_42 = input.rules.get(&42).unwrap();
+            let rule_42 = process_rule_recur(input, rule_42);
+
+            let rule_31 = input.rules.get(&31).unwrap();
+            let rule_31 = process_rule_recur(input, rule_31);
+
+            let mut accum: Vec<String> = Vec::new();
+            for i in 1 .. 10 {
+                let num_part = format!("{}{}{}", '{', i, '}');
+                accum.push(String::from(format!("(({}){}({}){})", rule_42, num_part, rule_31, num_part)));
+            }
+            let mut options = accum.join("|");
+            options.insert(0, '(');
+            options.push(')');
+            options
+        }
         r if r.contains("\"") => String::from(r.chars().nth(1).unwrap()),
         r if r.contains("|") => {
             let sub_rules: Vec<String> = r.split('|')
@@ -101,7 +130,11 @@ pub fn second(input: &[String]) -> Result<usize, Error> {
     let mut regex_str = process_rule_recur(&input, &input.rules.get(&0).unwrap());
     regex_str.insert(0, '^');
     regex_str.push_str("$");
-    let regex = Regex::new(regex_str.as_str()).or(Error::new("invalid regex generated"))?;
+    let regex = RegexBuilder::new(regex_str.as_str())
+        .size_limit(10 * (1<<20))
+        .build()
+        .unwrap();
+    // let regex = Regex::new(regex_str.as_str()).unwrap(); // .or(Error::new("invalid regex generated"))?;
 
     let mut accum = 0;
     for line in input.lines {
@@ -261,5 +294,24 @@ mod tests {
             )
         };
         assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_process_rule_recur_part_2() {
+        let mut rules = HashMap::new();
+        rules.insert(42, String::from("\"a\""));
+        rules.insert(31, String::from("\"b\""));
+        rules.insert(8, String::from("42 | 42 8"));
+        rules.insert(11, String::from("42 31 | 42 11 31"));
+        let input = Input{
+            rules, lines: Vec::new()
+        };
+
+        let result_8 = process_rule_recur(&input, &String::from("42 | 42 8"));
+        assert_eq!(result_8, "(a)+");
+
+        let result_11 = process_rule_recur(&input, &String::from("42 31 | 42 11 31"));
+        let expected = "(((a){1}(b){1})|((a){2}(b){2})|((a){3}(b){3})|((a){4}(b){4})|((a){5}(b){5})|((a){6}(b){6})|((a){7}(b){7})|((a){8}(b){8})|((a){9}(b){9}))";
+        assert_eq!(result_11, expected);
     }
 }
